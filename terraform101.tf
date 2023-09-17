@@ -170,6 +170,42 @@ locals {
   ╵
   */
 
+  local_list_maps = [
+    {
+      key1 = "value1_1"
+      key2 = "value2_1"
+    },
+    {
+      key1 = "value1_2"
+      key2 = "value2_2"
+    },
+    {
+      key1 = "value1_3"
+      key2 = "value2_3"
+    }
+  ]
+  /*
+  > local.local_list_maps[0].key1
+  "value1_1"
+
+  > local.local_list_maps.0.key1
+  "value1_1"
+
+  > local.local_list_maps[*].key1
+  [
+    "value1_1",
+    "value1_2",
+    "value1_3",
+  ]
+
+  > local.local_list_maps.*.key1
+  [
+    "value1_1",
+    "value1_2",
+    "value1_3",
+  ]
+  */
+
   /*
   ** Strings and Templates / Section
   ** Reference: https://developer.hashicorp.com/terraform/language/expressions/strings
