@@ -77,8 +77,9 @@ locals {
   "string"
   */
 
-  local_tuple = ["list_item_0", "list_item_1", "list_item_2"]
-  local_list  = tolist(["list_item_0", "list_item_1", "list_item_2"])
+  local_tuple                 = ["list_item_0", "list_item_1", "list_item_2"]
+  local_list                  = tolist(["list_item_0", "list_item_1", "list_item_2"])
+  local_tuple_not_convertible = ["list_item_0", true, { "key1" = "list_item_key_1" }]
   /*
   > type(local.local_tuple)
   tuple([
@@ -109,6 +110,31 @@ locals {
   │ 
   │ The given key does not identify an element in this collection value: the given index is greater than or equal to the length of the collection.
   ╵
+
+  > local.local_tuple_not_convertible
+  [
+    "list_item_0",
+    true,
+    {
+      "key1" = "list_item_key_1"
+    },
+  ]
+
+  > type(local.local_tuple_not_convertible)
+  tuple([
+      string,
+      bool,
+      object({
+          key1: string,
+      }),
+  ])
+
+  > tolist(local.local_tuple_not_convertible)
+  ╷
+  │ Error: Invalid function argument
+  │ 
+  │ Invalid value for "v" parameter: cannot convert tuple to list of any single type.
+  ╵
   */
 
   local_object = {
@@ -119,6 +145,15 @@ locals {
     key1 = "value1"
     key2 = "value2"
   })
+  local_object_not_convertible = {
+    key1 = "value1"
+    key2 = "value2"
+    key3 = true
+    key4 = {
+      key4_1 = "value4_1"
+      key4_2 = "value4_2"
+    }
+  }
   /*
   > type(local.local_object)
   object({
@@ -167,6 +202,35 @@ locals {
   │ Error: Invalid index
   │ 
   │ Elements of a set are identified only by their value and don't have any separate index or key to select with, so it's only possible to perform operations across all elements of the set.
+  ╵
+
+  > local.local_object_not_convertible
+  {
+    "key1" = "value1"
+    "key2" = "value2"
+    "key3" = true
+    "key4" = {
+      "key4_1" = "value4_1"
+      "key4_2" = "value4_2"
+    }
+  }
+
+  > type(local.local_object_not_convertible)
+  object({
+      key1: string,
+      key2: string,
+      key3: bool,
+      key4: object({
+          key4_1: string,
+          key4_2: string,
+      }),
+  })
+
+  > tomap(local.local_object_not_convertible)
+  ╷
+  │ Error: Invalid function argument
+  │ 
+  │ Invalid value for "v" parameter: cannot convert object to map of any single type.
   ╵
   */
 
@@ -594,7 +658,7 @@ locals {
   */
 
   # map
-  local_set_to_map_for = { for key in local.local_set : key => "value for ${key}" }
+  local_set_to_map_for = { for key in local.local_set : "${key} custom" => "value for ${key}" }
   /*
   > local.local_set_to_map_for
   {
@@ -906,14 +970,22 @@ locals {
   local_ds_list_strings_dublicates_mask         = ["good", "neutral", "bad", "bad", "good", "bad"]
   local_ds_list_strings_dublicates_intersection = ["string1", "string2"]
   local_ds_list_strings_dublicates_out          = ["string4", "string5"]
-  local_ds_list_strings_of_lists                = [["string1", "string2", ["string1", "string2"]], ["string3", "string4"]]
-  local_ds_map_strings                          = { key1 = "string1", key2 = "string2", key3 = "string3" }
-  local_ds_map_strings_merge                    = { key4 = "string4" }
-  local_ds_map_strings_merge_complex            = { key1 = { key1_1 = "string1_1" } }
-  local_ds_map_strings_merge_complex_sub        = { key1 = { key1_2 = "string1_2" } }
-  local_ds_one_element_list                     = ["string"]
-  local_ds_empty_list                           = []
-  local_ds_fruits_map                           = { "warehouse1" = ["apple", "pomegranate"], "warehouse2" = ["orange", "apple"], "warehouse3" = ["banana", "apple"] }
+  local_ds_list_strings_of_lists = [
+    [
+      "string1", "string2",
+      ["string1", "string2"]
+    ],
+    [
+      "string3", "string4"
+    ]
+  ]
+  local_ds_map_strings                   = { key1 = "string1", key2 = "string2", key3 = "string3" }
+  local_ds_map_strings_merge             = { key4 = "string4" }
+  local_ds_map_strings_merge_complex     = { key1 = { key1_1 = "string1_1" } }
+  local_ds_map_strings_merge_complex_sub = { key1 = { key1_2 = "string1_2" } }
+  local_ds_one_element_list              = ["string"]
+  local_ds_empty_list                    = []
+  local_ds_fruits_map                    = { "warehouse1" = ["apple", "pomegranate"], "warehouse2" = ["orange", "apple"], "warehouse3" = ["banana", "apple"] }
 
   local_collection_functions = {
     alltrue                  = alltrue(local.local_ds_list_of_conditions)
@@ -965,6 +1037,23 @@ locals {
     transpose                = transpose(local.local_ds_fruits_map)
     zipmap                   = zipmap(keys(local.local_ds_map_strings), values(local.local_ds_map_strings))
   }
+
+  obj1 = {
+    "key1" = "string1"
+    "key2" = "string2"
+    "key3" = "string3"
+  }
+
+
+  obj2 = {
+    "key1" = "string1"
+    "key2" = "string2"
+    "key3" = "string3"
+    "key4" = {
+      "key1" = "string1"
+    }
+  }
+
   /*
   ** Collection Functions
 
@@ -996,6 +1085,13 @@ locals {
   ])
 
   > coalesce(local.local_ds_list_of_conditions_null_prefix...)
+  "string"
+
+  > coalesce(local.local_ds_list_of_conditions_null_prefix[0], 
+    local.local_ds_list_of_conditions_null_prefix[1], 
+    local.local_ds_list_of_conditions_null_prefix[3],
+    local.local_ds_list_of_conditions_null_prefix[4],
+    local.local_ds_list_of_conditions_null_prefix[5])
   "string"
 
   > coalescelist(local.local_ds_list_of_conditions_null_prefix_lists...)
@@ -1155,6 +1251,7 @@ locals {
   │ 
   │ Invalid value for "list" parameter: must be a list, set, or tuple value with either zero or one elements.
   ╵
+
 
   > range(3)
   tolist([
@@ -1760,6 +1857,53 @@ locals {
 
 /*
 ** Resources
+*/
+
+/*
+** Conditions
+*/
+
+resource "null_resource" "terraform101_count_deploy_if" {
+  count = local.local_bool ? 1 : 0
+
+  triggers = {
+    test = "deployed"
+  }
+}
+/*
+terraform plan -target=null_resource.terraform101_count_deploy_if
+
+Terraform will perform the following actions:
+
+  # null_resource.terraform101_count_deploy_if[0] will be created
+  + resource "null_resource" "terraform101_count_deploy_if" {
+      + id       = (known after apply)
+      + triggers = {
+          + "test" = "deployed"
+        }
+    }
+*/
+
+resource "null_resource" "terraform101_for_each_deploy_if" {
+  for_each = local.local_bool ? toset(["enabled"]) : toset([])
+
+  triggers = {
+    test = "deployed"
+  }
+}
+
+/*
+terraform plan -target=null_resource.terraform101_for_each_deploy_if
+
+Terraform will perform the following actions:
+
+  # null_resource.terraform101_for_each_deploy_if["enabled"] will be created
+  + resource "null_resource" "terraform101_for_each_deploy_if" {
+      + id       = (known after apply)
+      + triggers = {
+          + "test" = "deployed"
+        }
+    }
 */
 
 /*
